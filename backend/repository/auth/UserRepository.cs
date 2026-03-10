@@ -1,4 +1,5 @@
 using Bot.Api.Database;
+using Bot.Api.Dto.Auth;
 using Bot.Api.Model.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,12 +14,18 @@ public class UserRepository : IUserRepository
         _dbContext = dbContext;
     }
 
-    public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    public async Task<UserVerificationStateDto> GetVerificationStateByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
     {
-        return _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+        if (user is null)
+        {
+            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
+        }
+
+        return ToStateDto(user, true);
     }
 
-    public async Task<User> CreatePendingUserAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    public async Task<UserVerificationStateDto> CreatePendingUserAsync(string phoneNumber, CancellationToken cancellationToken = default)
     {
         var user = new User
         {
@@ -29,40 +36,48 @@ public class UserRepository : IUserRepository
 
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return user;
+        return ToStateDto(user, true);
     }
 
-    public async Task<UserStatus?> GetStatusByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
-    {
-        return await _dbContext.Users
-            .Where(x => x.PhoneNumber == phoneNumber)
-            .Select(x => (UserStatus?)x.Status)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<bool> SetStatusByPhoneNumberAsync(string phoneNumber, UserStatus status, CancellationToken cancellationToken = default)
+    public async Task<UserVerificationStateDto> SetPendingNameByPhoneNumberAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
         if (user is null)
         {
-            return false;
-        }
-
-        user.Status = status;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<bool> SetNameByPhoneNumberAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default)
-    {
-        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
-        if (user is null)
-        {
-            return false;
+            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
         }
 
         user.Name = fullName;
+        user.Status = UserStatus.PendingNameConfirmation;
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return true;
+        return ToStateDto(user, true);
+    }
+
+    public async Task<UserVerificationStateDto> ConfirmPendingNameByPhoneNumberAsync(string phoneNumber, bool isConfirmed, CancellationToken cancellationToken = default)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+        if (user is null)
+        {
+            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
+        }
+
+        if (isConfirmed)
+        {
+            user.Status = UserStatus.Active;
+        }
+        else
+        {
+            user.Name = null;
+            user.Status = UserStatus.PendingName;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToStateDto(user, true);
+    }
+
+    private static UserVerificationStateDto ToStateDto(User user, bool exists)
+    {
+        var isVerified = user.Status == UserStatus.Active && !string.IsNullOrWhiteSpace(user.Name);
+        return new UserVerificationStateDto(user.Id, user.PhoneNumber, user.Name, user.Status, exists, isVerified);
     }
 }

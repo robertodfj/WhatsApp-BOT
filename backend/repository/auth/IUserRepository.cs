@@ -1,12 +1,12 @@
+using Bot.Api.Dto.Auth;
 using Bot.Api.Model.Auth;
 
 namespace Bot.Api.Repository.Auth;
 
 public interface IUserRepository
 {
-    Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
-    Task<User> CreatePendingUserAsync(string phoneNumber, CancellationToken cancellationToken = default);
-    Task<UserStatus?> GetStatusByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
-    Task<bool> SetStatusByPhoneNumberAsync(string phoneNumber, UserStatus status, CancellationToken cancellationToken = default);
-    Task<bool> SetNameByPhoneNumberAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default);
+    Task<UserVerificationStateDto> GetVerificationStateByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
+    Task<UserVerificationStateDto> CreatePendingUserAsync(string phoneNumber, CancellationToken cancellationToken = default);
+    Task<UserVerificationStateDto> SetPendingNameByPhoneNumberAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default);
+    Task<UserVerificationStateDto> ConfirmPendingNameByPhoneNumberAsync(string phoneNumber, bool isConfirmed, CancellationToken cancellationToken = default);
 }

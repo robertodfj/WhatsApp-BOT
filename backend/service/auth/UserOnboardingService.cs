@@ -1,4 +1,4 @@
-using Bot.Api.Model.Auth;
+using Bot.Api.Dto.Auth;
 using Bot.Api.Repository.Auth;
 
 namespace Bot.Api.Service.Auth;
@@ -12,57 +12,40 @@ public class UserOnboardingService : IUserOnboardingService
         _userRepository = userRepository;
     }
 
-    public async Task<IncomingMessageResult> HandleIncomingMessageAsync(string phoneNumber, string text, CancellationToken cancellationToken = default)
+    public async Task<UserVerificationStateDto> GetVerificationStateAsync(string phoneNumber, CancellationToken cancellationToken = default)
     {
-        var normalizedPhone = NormalizePhone(phoneNumber);
-        var messageText = (text ?? string.Empty).Trim();
-
-        var user = await _userRepository.GetByPhoneNumberAsync(normalizedPhone, cancellationToken);
-        if (user is null)
-        {
-            await _userRepository.CreatePendingUserAsync(normalizedPhone, cancellationToken);
-            return new IncomingMessageResult(IncomingMessageAction.AskForName, "Hola, dime tu nombre completo.");
-        }
-
-        if (user.Status == UserStatus.PendingName)
-        {
-            if (!IsValidFullName(messageText))
-            {
-                return new IncomingMessageResult(IncomingMessageAction.InvalidName, "Nombre no válido. Escribe tu nombre completo.");
-            }
-
-            await _userRepository.SetNameByPhoneNumberAsync(normalizedPhone, messageText, cancellationToken);
-            await _userRepository.SetStatusByPhoneNumberAsync(normalizedPhone, UserStatus.Active, cancellationToken);
-
-            return new IncomingMessageResult(IncomingMessageAction.Welcome, "¡Bienvenido! Ya estás registrado. Comandos: MENU, AYUDA.");
-        }
-
-        if (user.Status == UserStatus.Blocked)
-        {
-            return new IncomingMessageResult(IncomingMessageAction.Blocked, "Tu usuario está bloqueado. Contacta al administrador.");
-        }
-
-        return new IncomingMessageResult(IncomingMessageAction.ExecuteCommand, "Comando recibido. Procesando...");
+        return await _userRepository.GetVerificationStateByPhoneNumberAsync(phoneNumber, cancellationToken);
     }
 
-    private static string NormalizePhone(string phoneNumber)
+    public async Task<UserVerificationStateDto> CreatePendingUserAsync(string phoneNumber, CancellationToken cancellationToken = default)
     {
-        return new string((phoneNumber ?? string.Empty).Where(char.IsDigit).ToArray());
+        return await _userRepository.CreatePendingUserAsync(phoneNumber, cancellationToken);
     }
 
-    private static bool IsValidFullName(string fullName)
+    public async Task<UserVerificationStateDto> SetPendingNameAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(fullName))
+        return await _userRepository.SetPendingNameByPhoneNumberAsync(phoneNumber, fullName, cancellationToken);
+    }
+
+    public async Task<UserVerificationStateDto> ConfirmPendingNameAsync(string phoneNumber, bool isConfirmed, CancellationToken cancellationToken = default)
+    {
+        return await _userRepository.ConfirmPendingNameByPhoneNumberAsync(phoneNumber, isConfirmed, cancellationToken);
+    }
+
+    public Task<IncomingMessageResponseDto> ExecuteCommandAsync(string phoneNumber, string text, CancellationToken cancellationToken = default)
+    {
+        var normalizedText = (text ?? string.Empty).Trim().ToUpperInvariant();
+
+        if (normalizedText == "MENU")
         {
-            return false;
+            return Task.FromResult(new IncomingMessageResponseDto(IncomingMessageActionDto.ExecuteCommand, "Menú: AYUDA, ESTADO, SALDO."));
         }
 
-        var compact = fullName.Trim();
-        if (compact.Length < 3 || compact.Length > 150)
+        if (normalizedText == "AYUDA")
         {
-            return false;
+            return Task.FromResult(new IncomingMessageResponseDto(IncomingMessageActionDto.ExecuteCommand, "Comandos disponibles: MENU, AYUDA, ESTADO."));
         }
 
-        return compact.Contains(' ');
+        return Task.FromResult(new IncomingMessageResponseDto(IncomingMessageActionDto.ExecuteCommand, "Comando recibido. Procesando..."));
     }
 }
