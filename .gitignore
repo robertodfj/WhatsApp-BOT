@@ -1,0 +1,36 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# User/IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages and caches
+**/packages/
+*.nupkg
+*.snupkg
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Environment and secrets
+.env
+.env.*
+secrets.json
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Databases/local runtime data
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
