@@ -1,0 +1,92 @@
+{
+  "info": {
+    "_postman_id": "1d01e907-997b-43b9-9a73-07dc16a0cb7b",
+    "name": "Yeasy",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45775665"
+  },
+  "item": [
+    {
+      "name": "disponibilidad",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"commerce\": \"c02f53c7-3d03-442a-b812-419c073b301d\",\n  \"date\": \"2026-03-12\",\n  \"servicesDuration\": 30,\n  \"serviceCollection\": [\n    {\n      \"uuid\": \"69ee5900-706c-4daf-9e37-04a21fc8ac8e\",\n      \"name\": \"Corte de Pelo\",\n      \"price\": 12,\n      \"decimal\": 0,\n      \"defaultDuration\": 30,\n      \"description\": \"Tanto degradado, como trabajo a tijera.\",\n      \"order\": 0,\n      \"isVariable\": false,\n      \"isPublic\": true,\n      \"isSuscription\": false,\n      \"createdAt\": \"2025-11-25T10:21:22.963Z\",\n      \"updatedAt\": \"2025-11-25T16:35:51.000Z\",\n      \"isDeleted\": false,\n      \"count\": 361,\n      \"showDescription\": false\n    }\n  ],\n  \"userTimezone\": \"Europe/Madrid\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://apitest.yeasyapp.com/availability/",
+          "protocol": "https",
+          "host": [
+            "apitest",
+            "yeasyapp",
+            "com"
+          ],
+          "path": [
+            "availability",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Info barberia limpio",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://apitest.yeasyapp.com/services/?commerce=c02f53c7-3d03-442a-b812-419c073b301d",
+          "protocol": "https",
+          "host": [
+            "apitest",
+            "yeasyapp",
+            "com"
+          ],
+          "path": [
+            "services",
+            ""
+          ],
+          "query": [
+            {
+              "key": "commerce",
+              "value": "c02f53c7-3d03-442a-b812-419c073b301d"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+   
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
