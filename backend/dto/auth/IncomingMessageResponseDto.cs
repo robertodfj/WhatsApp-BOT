@@ -2,13 +2,15 @@ namespace Bot.Api.Dto.Auth;
 
 public enum IncomingMessageActionDto
 {
-    AskForName = 0,
-    AskNameConfirmation = 1,
-    Welcome = 2,
-    ExecuteCommand = 3,
-    Blocked = 4,
-    InvalidName = 5,
-    InvalidConfirmation = 6
+    AskForEmail = 0,
+    AskForName = 1,
+    AskNameConfirmation = 2,
+    Welcome = 3,
+    ExecuteCommand = 4,
+    Blocked = 5,
+    InvalidEmail = 6,
+    InvalidName = 7,
+    InvalidConfirmation = 8
 }
 
 public sealed record IncomingMessageResponseDto(IncomingMessageActionDto Action, string Reply);

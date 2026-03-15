@@ -23,12 +23,28 @@ public class UserVerificationHelper : IUserVerificationHelper
         if (!verificationState.Exists)
         {
             await _userOnboardingService.CreatePendingUserAsync(normalizedPhone, cancellationToken);
-            return new IncomingMessageResponseDto(IncomingMessageActionDto.AskForName, "Hola, dime tu nombre completo.");
+            return new IncomingMessageResponseDto(IncomingMessageActionDto.AskForEmail, "Hola, para registrarte dime tu correo electrónico.");
         }
 
         if (verificationState.Status == UserStatus.Blocked)
         {
             return new IncomingMessageResponseDto(IncomingMessageActionDto.Blocked, "Tu usuario está bloqueado. Contacta al administrador.");
+        }
+
+        if (verificationState.Status == UserStatus.PendingEmail)
+        {
+            if (!IsValidEmail(messageText))
+            {
+                return new IncomingMessageResponseDto(IncomingMessageActionDto.InvalidEmail, "Correo no válido. Escribe un email correcto, por ejemplo nombre@dominio.com.");
+            }
+
+            var pendingNameState = await _userOnboardingService.SetPendingEmailAsync(normalizedPhone, messageText, cancellationToken);
+            if (!pendingNameState.Exists || string.IsNullOrWhiteSpace(pendingNameState.Email))
+            {
+                return new IncomingMessageResponseDto(IncomingMessageActionDto.InvalidEmail, "No se pudo guardar el correo. Inténtalo de nuevo.");
+            }
+
+            return new IncomingMessageResponseDto(IncomingMessageActionDto.AskForName, "Perfecto. Ahora escribe tu nombre completo.");
         }
 
         if (verificationState.Status == UserStatus.PendingName)
@@ -93,6 +109,30 @@ public class UserVerificationHelper : IUserVerificationHelper
         }
 
         return compact.Contains(' ');
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
+        var trimmed = email.Trim();
+        if (trimmed.Length < 5 || trimmed.Length > 200)
+        {
+            return false;
+        }
+
+        try
+        {
+            var parsed = new System.Net.Mail.MailAddress(trimmed);
+            return parsed.Address.Equals(trimmed, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static bool IsAffirmative(string text)

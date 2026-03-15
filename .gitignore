@@ -29,8 +29,15 @@ appsettings.*.Local.json
 
 # Databases/local runtime data
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
 *.sqlite3
+
+# Lock and cache files
+*.cache
+*.pid
 
 # OS files
 .DS_Store

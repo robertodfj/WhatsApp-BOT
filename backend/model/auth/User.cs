@@ -15,11 +15,14 @@ namespace Bot.Api.Model.Auth
         [MaxLength(150)]
         public string? Name { get; set; }
 
+        [MaxLength(200)]
+        public string? Email { get; set; }
+
         [Required]
         [MaxLength(20)]
         public required string PhoneNumber { get; set; }
 
         [Required]
-        public UserStatus Status { get; set; } = UserStatus.PendingName;
+        public UserStatus Status { get; set; } = UserStatus.PendingEmail;
     }
 }

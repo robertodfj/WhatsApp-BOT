@@ -22,6 +22,11 @@ public class UserOnboardingService : IUserOnboardingService
         return await _userRepository.CreatePendingUserAsync(phoneNumber, cancellationToken);
     }
 
+    public async Task<UserVerificationStateDto> SetPendingEmailAsync(string phoneNumber, string email, CancellationToken cancellationToken = default)
+    {
+        return await _userRepository.SetPendingEmailByPhoneNumberAsync(phoneNumber, email, cancellationToken);
+    }
+
     public async Task<UserVerificationStateDto> SetPendingNameAsync(string phoneNumber, string fullName, CancellationToken cancellationToken = default)
     {
         return await _userRepository.SetPendingNameByPhoneNumberAsync(phoneNumber, fullName, cancellationToken);

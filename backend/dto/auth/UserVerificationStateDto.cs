@@ -5,6 +5,7 @@ namespace Bot.Api.Dto.Auth;
 public sealed record UserVerificationStateDto(
     int? UserId,
     string PhoneNumber,
+    string? Email,
     string? Name,
     UserStatus Status,
     bool Exists,

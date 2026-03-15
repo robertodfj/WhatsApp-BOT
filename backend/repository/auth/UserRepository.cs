@@ -19,7 +19,7 @@ public class UserRepository : IUserRepository
         var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
         if (user is null)
         {
-            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
+            return new UserVerificationStateDto(null, phoneNumber, null, null, UserStatus.PendingEmail, false, false);
         }
 
         return ToStateDto(user, true);
@@ -30,11 +30,26 @@ public class UserRepository : IUserRepository
         var user = new User
         {
             PhoneNumber = phoneNumber,
-            Status = UserStatus.PendingName,
+            Status = UserStatus.PendingEmail,
+            Email = null,
             Name = null
         };
 
         _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToStateDto(user, true);
+    }
+
+    public async Task<UserVerificationStateDto> SetPendingEmailByPhoneNumberAsync(string phoneNumber, string email, CancellationToken cancellationToken = default)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
+        if (user is null)
+        {
+            return new UserVerificationStateDto(null, phoneNumber, null, null, UserStatus.PendingEmail, false, false);
+        }
+
+        user.Email = email;
+        user.Status = UserStatus.PendingName;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToStateDto(user, true);
     }
@@ -44,7 +59,7 @@ public class UserRepository : IUserRepository
         var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
         if (user is null)
         {
-            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
+            return new UserVerificationStateDto(null, phoneNumber, null, null, UserStatus.PendingEmail, false, false);
         }
 
         user.Name = fullName;
@@ -58,7 +73,7 @@ public class UserRepository : IUserRepository
         var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber, cancellationToken);
         if (user is null)
         {
-            return new UserVerificationStateDto(null, phoneNumber, null, UserStatus.PendingName, false, false);
+            return new UserVerificationStateDto(null, phoneNumber, null, null, UserStatus.PendingEmail, false, false);
         }
 
         if (isConfirmed)
@@ -77,7 +92,9 @@ public class UserRepository : IUserRepository
 
     private static UserVerificationStateDto ToStateDto(User user, bool exists)
     {
-        var isVerified = user.Status == UserStatus.Active && !string.IsNullOrWhiteSpace(user.Name);
-        return new UserVerificationStateDto(user.Id, user.PhoneNumber, user.Name, user.Status, exists, isVerified);
+        var isVerified = user.Status == UserStatus.Active
+            && !string.IsNullOrWhiteSpace(user.Name)
+            && !string.IsNullOrWhiteSpace(user.Email);
+        return new UserVerificationStateDto(user.Id, user.PhoneNumber, user.Email, user.Name, user.Status, exists, isVerified);
     }
 }
