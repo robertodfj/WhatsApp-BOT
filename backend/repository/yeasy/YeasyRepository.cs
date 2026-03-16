@@ -89,20 +89,60 @@ public class YeasyRepository : IYeasyRepository
 
     private static BarbershopAvailabilityDto ParseAvailability(JsonElement root)
     {
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            var morningSlots = new List<BarbershopAvailabilitySlotDto>();
+            var afternoonSlots = new List<BarbershopAvailabilitySlotDto>();
+
+            foreach (var item in root.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                if (!item.TryGetProperty("availability", out var availabilityElement) || availabilityElement.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                morningSlots.AddRange(ParseAvailabilityPeriod(availabilityElement, "morning"));
+                afternoonSlots.AddRange(ParseAvailabilityPeriod(availabilityElement, "afternoon"));
+            }
+
+            return new BarbershopAvailabilityDto(MergeSlots(morningSlots), MergeSlots(afternoonSlots));
+        }
+
         if (root.ValueKind != JsonValueKind.Object)
         {
             return new BarbershopAvailabilityDto([], []);
         }
 
-        if (!root.TryGetProperty("availability", out var availabilityElement) || availabilityElement.ValueKind != JsonValueKind.Object)
+        if (!root.TryGetProperty("availability", out var objectAvailabilityElement) || objectAvailabilityElement.ValueKind != JsonValueKind.Object)
         {
             return new BarbershopAvailabilityDto([], []);
         }
 
-        var morning = ParseAvailabilityPeriod(availabilityElement, "morning");
-        var afternoon = ParseAvailabilityPeriod(availabilityElement, "afternoon");
+        var morning = ParseAvailabilityPeriod(objectAvailabilityElement, "morning");
+        var afternoon = ParseAvailabilityPeriod(objectAvailabilityElement, "afternoon");
 
         return new BarbershopAvailabilityDto(morning, afternoon);
+    }
+
+    private static IReadOnlyList<BarbershopAvailabilitySlotDto> MergeSlots(IEnumerable<BarbershopAvailabilitySlotDto> slots)
+    {
+        return slots
+            .GroupBy(slot => new { slot.Date, slot.Label })
+            .Select(group => new BarbershopAvailabilitySlotDto(
+                group.Key.Date,
+                group.Key.Label,
+                group
+                    .SelectMany(slot => slot.Employees)
+                    .GroupBy(employee => employee.Uuid)
+                    .Select(employeeGroup => employeeGroup.First())
+                    .ToList()))
+            .OrderBy(slot => slot.Date)
+            .ToList();
     }
 
     private static IReadOnlyList<BarbershopAvailabilitySlotDto> ParseAvailabilityPeriod(JsonElement availabilityElement, string periodName)

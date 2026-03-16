@@ -1,4 +1,5 @@
 using Bot.Api.Service.Yeasy;
+using Bot.Api.Dto.Yeasy;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bot.Api.Controller.Yeasy;
@@ -19,5 +20,14 @@ public class YeasyController : ControllerBase
     {
         var services = await _yeasyService.GetServicesAsync(cancellationToken);
         return Ok(services);
+    }
+
+    [HttpPost("availability")]
+    public async Task<IActionResult> GetAvailability(
+        [FromBody] AvailabilityRequestBodyDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var availability = await _yeasyService.GetAvailabilityResponseAsync(request, cancellationToken);
+        return Ok(availability);
     }
 }
