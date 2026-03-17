@@ -1,3 +1,4 @@
+using System.Data;
 using Bot.Api.Database;
 using Bot.Api.Helper.Auth;
 using Bot.Api.Model.Yeasy;
@@ -28,6 +29,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
+    await EnsureUsersSchemaAsync(dbContext);
 }
 
 // Configure the HTTP request pipeline.
@@ -42,3 +44,31 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapControllers();
 
 app.Run();
+
+static async Task EnsureUsersSchemaAsync(AppDbContext dbContext, CancellationToken cancellationToken = default)
+{
+    var connection = dbContext.Database.GetDbConnection();
+    if (connection.State != ConnectionState.Open)
+    {
+        await connection.OpenAsync(cancellationToken);
+    }
+
+    var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    await using var pragmaCommand = connection.CreateCommand();
+    pragmaCommand.CommandText = "PRAGMA table_info(users);";
+
+    await using var reader = await pragmaCommand.ExecuteReaderAsync(cancellationToken);
+    while (await reader.ReadAsync(cancellationToken))
+    {
+        var columnName = reader["name"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(columnName))
+        {
+            columns.Add(columnName);
+        }
+    }
+
+    if (!columns.Contains("Email"))
+    {
+        await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE users ADD COLUMN Email TEXT NULL;", cancellationToken);
+    }
+}
